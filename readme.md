@@ -71,7 +71,7 @@ The labs are written for developers using the .NET Framework in C# using Visual 
 1. **[Introduction to the Partner Center SDK](hol-01-intro-pcsdk)**
 1. **[Using the Partner Center SDK with an Existing CREST API Based Application](hol-02-pcapi-crest)**
 1. **[Implementing Parameter Validation for Managing Customers](hol-03-validation)**
-1. Working with Invoices and Invoice Line Items (*coming soon*)
+1. **[Avoiding Common Order Submission Issues](hol-04-orders)**
 1. Adding Resources to a new Azure Subscription (*coming soon*)
 1. Working with Rated Usage Data (*coming soon*)
 
@@ -79,6 +79,7 @@ The labs are written for developers using the .NET Framework in C# using Visual 
 
 | Date | Comment |
 | ----: | ------- |
+|  | Added HOL #4. |
 | April 14, 2016 | Add HOL #3 & module recording links |
 | March 17, 2016 | Added HOL #1, #2. |
 | March 15, 2016 | Initial version. |
