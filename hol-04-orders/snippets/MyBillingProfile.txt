@@ -1,0 +1,21 @@
+public class MyBillingProfile {
+  public string Id { get; set; }
+  [Required]
+  [DisplayName("First Name")]
+  public string FirstName { get; set; }
+
+  [Required]
+  [DisplayName("Last Name")]
+  public string LastName { get; set; }
+
+  public string Email { get; set; }
+
+  [Required]
+  [DisplayName("Company Name")]
+  public string CompanyName { get; set; }
+
+  public string Language { get; set; }
+  public string Culture { get; set; }
+
+  public MyAddress Address { get; set; }
+}

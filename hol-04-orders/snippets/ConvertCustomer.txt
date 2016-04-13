@@ -1,0 +1,69 @@
+private static MyCustomer ConvertCustomer(Customer pcCustomer) {
+  var customer = new MyCustomer {
+    Id = pcCustomer.Id,
+    TenantId = pcCustomer.CompanyProfile.TenantId,
+    Domain = pcCustomer.CompanyProfile.Domain,
+    CompanyName = pcCustomer.CompanyProfile.CompanyName
+  };
+
+  // if billing profile specified...
+  if (pcCustomer.BillingProfile != null) {
+    customer.BillingProfile = new MyBillingProfile {
+      Id=pcCustomer.BillingProfile.Id,
+      CompanyName = pcCustomer.BillingProfile.CompanyName,
+      FirstName = pcCustomer.BillingProfile.FirstName,
+      LastName = pcCustomer.BillingProfile.LastName,
+      Email = pcCustomer.BillingProfile.Email,
+      Culture = pcCustomer.BillingProfile.Culture,
+      Language = pcCustomer.BillingProfile.Language,
+      Address = new MyAddress {
+        FirstName = pcCustomer.BillingProfile.DefaultAddress.FirstName,
+        LastName = pcCustomer.BillingProfile.DefaultAddress.LastName,
+        PhoneNumber = pcCustomer.BillingProfile.DefaultAddress.PhoneNumber,
+        Address1 = pcCustomer.BillingProfile.DefaultAddress.AddressLine1,
+        Address2 = pcCustomer.BillingProfile.DefaultAddress.AddressLine2,
+        City = pcCustomer.BillingProfile.DefaultAddress.City,
+        State = pcCustomer.BillingProfile.DefaultAddress.State,
+        PostalCode = pcCustomer.BillingProfile.DefaultAddress.PostalCode,
+        Region = pcCustomer.BillingProfile.DefaultAddress.Region,
+        Country = pcCustomer.BillingProfile.DefaultAddress.Country
+      }
+    };
+  }
+
+  return customer;
+}
+
+private static Customer ConvertCustomer(MyCustomer myCustomer) {
+  var customer = new Customer {
+    Id = myCustomer.Id,
+    CompanyProfile = new CustomerCompanyProfile {
+      TenantId = myCustomer.TenantId,
+      CompanyName = myCustomer.CompanyName,
+      Domain = myCustomer.Domain
+    },
+    BillingProfile = new CustomerBillingProfile {
+      Id = myCustomer.BillingProfile.Id,
+      CompanyName = myCustomer.BillingProfile.CompanyName,
+      FirstName = myCustomer.BillingProfile.FirstName,
+      LastName = myCustomer.BillingProfile.LastName,
+      Email = myCustomer.BillingProfile.Email,
+      Culture = myCustomer.BillingProfile.Culture,
+      Language = myCustomer.BillingProfile.Language,
+      DefaultAddress = new Address {
+        FirstName = myCustomer.BillingProfile.FirstName,
+        LastName = myCustomer.BillingProfile.LastName,
+        PhoneNumber = myCustomer.BillingProfile.Address.PhoneNumber,
+        AddressLine1 = myCustomer.BillingProfile.Address.Address1,
+        AddressLine2 = myCustomer.BillingProfile.Address.Address2,
+        City = myCustomer.BillingProfile.Address.City,
+        State = myCustomer.BillingProfile.Address.State,
+        PostalCode = myCustomer.BillingProfile.Address.PostalCode,
+        Region = myCustomer.BillingProfile.Address.Region,
+        Country = myCustomer.BillingProfile.Address.Country
+      }
+    }
+  };
+
+  return customer;
+}

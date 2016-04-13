@@ -1,0 +1,16 @@
+public class MyCustomer {
+  [ReadOnly(true)]
+  public string Id { get; set; }
+
+  [ReadOnly(true)]
+  public string TenantId { get; set; }
+
+  [Required]
+  [DisplayName("Company Name")]
+  public string CompanyName { get; set; }
+
+  [Required]
+  public string Domain { get; set; }
+
+  public MyBillingProfile BillingProfile { get; set; }
+}

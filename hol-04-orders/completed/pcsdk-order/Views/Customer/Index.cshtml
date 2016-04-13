@@ -1,0 +1,28 @@
+﻿@model pcsdk_order.Models.CustomerViewModel
+
+@{
+  ViewBag.Title = "My Customers";
+}
+
+<h2>My Customers</h2>
+
+<table class="table">
+  <tr>
+    <th>Tenant ID</th>
+    <th>Company Name</th>
+    <th>Domain</th>
+    <th</th>
+  </tr>
+
+  @foreach (var item in Model.Customers) {
+    <tr>
+      <td>@Html.DisplayFor(modelItem => item.TenantId)</td>
+      <td>@Html.DisplayFor(modelItem => item.CompanyName)</td>
+      <td>@Html.DisplayFor(modelItem => item.Domain)</td>
+      <td>
+        @Html.ActionLink("Subscriptions", "Subscriptions", new { id = item.Id })
+      </td>
+    </tr>
+  }
+
+</table>
