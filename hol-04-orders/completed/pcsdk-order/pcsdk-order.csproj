@@ -199,9 +199,14 @@
     </Compile>
     <Compile Include="Models\AdalTokenCache.cs" />
     <Compile Include="Models\ApplicationDbContext.cs" />
+    <Compile Include="Models\CustomerSubscriptionViewModel.cs" />
     <Compile Include="Models\CustomerViewModel.cs" />
     <Compile Include="Models\MyCustomer.cs" />
     <Compile Include="Models\MyCustomerRepository.cs" />
+    <Compile Include="Models\MyOffer.cs" />
+    <Compile Include="Models\MyOfferRepository.cs" />
+    <Compile Include="Models\MySubscription.cs" />
+    <Compile Include="Models\MySubscriptionRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="Utilities\PcAuthHelper.cs" />
@@ -247,6 +252,7 @@
     <Content Include="Views\UserProfile\Index.cshtml" />
     <Content Include="Views\UserProfile\Relogin.cshtml" />
     <Content Include="Views\Customer\Index.cshtml" />
+    <Content Include="Views\Customer\Subscriptions.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

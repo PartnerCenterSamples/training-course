@@ -218,18 +218,6 @@ Before you start coding, add some NuGet package dependencies that you will need 
     public List<MyCustomer> Customers { get; set; }
 
     public MyCustomer Customer { get; set; }
-
-    public IEnumerable<SelectListItem> Countries { get; set; }
-
-    public IEnumerable<string> ValidationErrors { get; set; }
-    public CustomerViewModel() {
-      ValidationErrors = new List<string>();
-    }
-
-    public CustomerViewModel(MyCustomer customer) {
-      Customer = customer;
-      ValidationErrors = new List<string>();
-    }
     ```
 
 At this point the plumbing has been setup for you to now add a controller and view to list all customers on the site.
