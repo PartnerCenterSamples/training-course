@@ -12,7 +12,7 @@ This Visual Studio based lab provides guidance on testing parameters prior to ed
 - Developer environment with Visual Studio 2015 installed & configured.
 
 
-## Exercise 1: Acquire, Configure & Test Existing CREST API Application
+## Exercise 1: Create ASP.NET MVC Application To List Customers
 
 In this exercise you will create a new ASP.NET MVC application that will list all of the customers in your CSP partner / Integration Sandbox account.
 
