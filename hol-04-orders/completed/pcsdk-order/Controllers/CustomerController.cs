@@ -36,5 +36,63 @@ namespace pcsdk_order.Controllers {
       }
     }
 
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult> AddLicense(string customerId, string subscriptionId) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId)) {
+        return RedirectToAction("Index");
+      } else {
+        CustomerAddLicenseViewModel viewModel = new CustomerAddLicenseViewModel();
+
+        // get customer & add to viewmodel
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+        viewModel.Customer = customer;
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+        viewModel.CustomerSubscription = subscription;
+
+        // create lookup for licenses available for purchase
+        List<SelectListItem> dropDownItems = new List<SelectListItem>();
+        for (int index = 1; index+ subscription.Quantity <= subscription.Offer.MaxQuantity; index++) {
+          dropDownItems.Add(new SelectListItem {
+            Text = string.Format("add {0} more license(s) - total of {1}", index, subscription.Quantity + index),
+            Value = index.ToString()
+          });
+          // limit adding only 1000 licenses at a time
+          if (index == 1000) {
+            break;
+          }
+        }
+        viewModel.AvailableLicenseQuantity = dropDownItems;
+
+        return View(viewModel);
+      }
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<ActionResult> AddLicense(string customerId, string subscriptionId, string licensesToAdd) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId) || string.IsNullOrEmpty(licensesToAdd)) {
+        return RedirectToAction("Index");
+      } else {
+        // get customer
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+
+        // update quantity and save
+        subscription.Quantity += Convert.ToInt16(licensesToAdd);
+        await MySubscriptionRepository.UpdateSubscription(customerId, subscription);
+
+
+        return RedirectToAction("Index");
+      }
+    }
+
+
   }
 }

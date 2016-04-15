@@ -32,6 +32,21 @@ namespace pcsdk_order.Models {
       return subscriptions;
     }
 
+    public static async Task<MySubscription> GetSubscription(string customerId, string subscriptionId) {
+      var pcSubscription = await (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscriptionId).GetAsync();
+
+      return await ConvertSubscription(pcSubscription);
+    }
+
+    public static async Task UpdateSubscription(string customerId, MySubscription subscription) {
+      // get subscription
+      var pcSubscription = await(await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscription.Id).GetAsync();
+      // update quantity 
+      pcSubscription.Quantity = subscription.Quantity;
+      // update subscription
+      await (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscription.Id).PatchAsync(pcSubscription);
+    }
+
     private static async Task<MySubscription> ConvertSubscription(Subscription pcSubscription) {
       var subscription = new MySubscription {
         Id = pcSubscription.Id,
@@ -41,5 +56,6 @@ namespace pcsdk_order.Models {
 
       return subscription;
     }
+
   }
 }

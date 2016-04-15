@@ -23,11 +23,15 @@
       <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
       <td>
         @if (item.Offer.UnitType == "Licenses") {
-          @Html.ActionLink("add licenses", "AddLicense", "Customer",
-          new {
-            customerId = Model.Customer.Id,
-            subscriptionId = item.Id
-          }, null)
+          if (item.Offer.MaxQuantity > item.Quantity) {
+            @Html.ActionLink("add licenses", "AddLicense", "Customer",
+                   new {
+                     customerId = Model.Customer.Id,
+                     subscriptionId = item.Id
+                   }, null)
+          } else {
+            @Html.Raw("Max license limit reached, would you like to ") @Html.ActionLink("transition", "TransitionSubscription", "Customer",new { customerId = Model.Customer.Id, subscriptionId = item.Id }, null) @Html.Raw(" to another license?")
+          }
         }
       </td>
 

@@ -199,6 +199,7 @@
     </Compile>
     <Compile Include="Models\AdalTokenCache.cs" />
     <Compile Include="Models\ApplicationDbContext.cs" />
+    <Compile Include="Models\CustomerAddLicenseViewModel.cs" />
     <Compile Include="Models\CustomerSubscriptionViewModel.cs" />
     <Compile Include="Models\CustomerViewModel.cs" />
     <Compile Include="Models\MyCustomer.cs" />
@@ -240,7 +241,9 @@
     <Content Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </Content>
-    <Content Include="Views\Web.config" />
+    <Content Include="Views\Web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
@@ -253,6 +256,7 @@
     <Content Include="Views\UserProfile\Relogin.cshtml" />
     <Content Include="Views\Customer\Index.cshtml" />
     <Content Include="Views\Customer\Subscriptions.cshtml" />
+    <Content Include="Views\Customer\AddLicense.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

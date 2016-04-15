@@ -1,0 +1,29 @@
+﻿@model pcsdk_order.Models.CustomerAddLicenseViewModel
+
+@{
+  ViewBag.Title = "Add License";
+}
+
+<h2>Add Licenses to Existing Subscription</h2>
+
+@using (Html.BeginForm()) {
+  @Html.AntiForgeryToken()
+
+  @Html.Hidden("customerId", Model.Customer.Id)
+  @Html.Hidden("subscriptionId", Model.CustomerSubscription.Id)
+
+  <div>
+    <h3>Current Subscription: @Html.DisplayFor(model => model.CustomerSubscription.Offer.Name)</h3>
+    <h3>Current Number of Licenses: @Html.DisplayFor(model => model.CustomerSubscription.Quantity)</h3>
+    <hr />
+    <h4>How many licenses do you want to add?</h4>
+    @Html.DropDownListFor(model => model.LicensesToAdd, Model.AvailableLicenseQuantity)
+  </div>
+  <p>
+    Need more licenses? The subscription you are currently on only allows up to @Html.DisplayFor(model => model.CustomerSubscription.Offer.MaxQuantity) licenses.<br />
+    If you need more you may need to @Html.ActionLink("transition your existing subscription to a new subscription", "TransitionSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = Model.CustomerSubscription.Id }, null).
+  </p>
+  <p>
+    <input type="submit" value="Add licenses" class="btn btn-primary" /><br />
+  </p>
+}
