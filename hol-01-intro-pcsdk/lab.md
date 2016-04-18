@@ -118,8 +118,8 @@ Now that the project is setup, you can code the console application to communica
     - **aad:tenant-id:** the **account id** you copied from the Partner Center website
     - **aad:client-id:** the **AAD application's client ID** you created previously
     - **aad:client-secret:** leave this blank
-    - **partnercenter-endpoint:** `https://partnerapi.store.microsoft.com`
-    - **partnercenter-resource:** `https://partnerapi.store.microsoft.com`
+    - **partnercenter-endpoint:** `https://api.partnercenter.microsoft.com`
+    - **partnercenter-resource:** `https://api.partnercenter.microsoft.com`
     - **partner-user:** the username (email) for the account you use to login to your Integration Sandbox in Partner Center
     - **partner-password:** the password for the account you use to login to your Integration Sandbox in Partner Center
   1. Add a new class to the project to access settings:

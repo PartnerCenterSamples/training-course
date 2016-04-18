@@ -10,6 +10,7 @@
   <tr>
     <th>Subscription</th>
     <th>Quantity</th>
+    <th>Status</th>
     <th></th>
   </tr>
 
@@ -21,6 +22,7 @@
         <em>@Html.DisplayFor(modelItem => item.Offer.Description)</em>
       </td>
       <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
+      <td>@Html.DisplayFor(modelItem => item.Status)</td>
       <td>
         @if (item.Offer.UnitType == "Licenses") {
           if (item.Offer.MaxQuantity > item.Quantity) {
@@ -30,7 +32,7 @@
                      subscriptionId = item.Id
                    }, null)
           } else {
-            @Html.Raw("Max license limit reached, would you like to ") @Html.ActionLink("transition", "TransitionSubscription", "Customer",new { customerId = Model.Customer.Id, subscriptionId = item.Id }, null) @Html.Raw(" to another license?")
+            @Html.Raw("Max license limit reached, would you like to ") @Html.ActionLink("transition", "UpgradeSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = item.Id }, null) @Html.Raw(" to another license?")
           }
         }
       </td>

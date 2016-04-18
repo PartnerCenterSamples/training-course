@@ -80,6 +80,7 @@ The labs are written for developers using the .NET Framework in C# using Visual 
 | Date | Comment |
 | ----: | ------- |
 |  | Added HOL #4. |
+| April 18, 2016 | Typo fix in HOL#1 for Partner Center SDK endpoint. |
 | April 14, 2016 | Add HOL #3 & module recording links |
 | March 17, 2016 | Added HOL #1, #2. |
 | March 15, 2016 | Initial version. |

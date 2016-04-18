@@ -8,5 +8,6 @@ namespace pcsdk_order.Models {
     public string Id { get; set; }
     public MyOffer Offer { get; set; }
     public int Quantity { get; set; }
+    public string Status { get; set; }
   }
 }

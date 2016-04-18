@@ -21,7 +21,7 @@
   </div>
   <p>
     Need more licenses? The subscription you are currently on only allows up to @Html.DisplayFor(model => model.CustomerSubscription.Offer.MaxQuantity) licenses.<br />
-    If you need more you may need to @Html.ActionLink("transition your existing subscription to a new subscription", "TransitionSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = Model.CustomerSubscription.Id }, null).
+    If you need more you may need to @Html.ActionLink("transition your existing subscription to a new subscription", "UpgradeSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = Model.CustomerSubscription.Id }, null).
   </p>
   <p>
     <input type="submit" value="Add licenses" class="btn btn-primary" /><br />

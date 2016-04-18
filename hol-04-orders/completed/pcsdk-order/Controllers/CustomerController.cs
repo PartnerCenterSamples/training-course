@@ -55,7 +55,7 @@ namespace pcsdk_order.Controllers {
 
         // create lookup for licenses available for purchase
         List<SelectListItem> dropDownItems = new List<SelectListItem>();
-        for (int index = 1; index+ subscription.Quantity <= subscription.Offer.MaxQuantity; index++) {
+        for (int index = 1; index + subscription.Quantity <= subscription.Offer.MaxQuantity; index++) {
           dropDownItems.Add(new SelectListItem {
             Text = string.Format("add {0} more license(s) - total of {1}", index, subscription.Quantity + index),
             Value = index.ToString()
@@ -93,6 +93,62 @@ namespace pcsdk_order.Controllers {
       }
     }
 
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult> UpgradeSubscription(string customerId, string subscriptionId) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId)) {
+        return RedirectToAction("Index");
+      } else {
+        CustomerSubscriptionUpgradeViewModel viewModel = new CustomerSubscriptionUpgradeViewModel();
+
+        // get customer & add to viewmodel
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+        viewModel.Customer = customer;
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+        viewModel.CustomerSubscription = subscription;
+
+        // get upgrade options
+        var upgrades = await MySubscriptionRepository.GetUpgradeOptions(customerId, subscriptionId);
+        List<SelectListItem> upgadeOptions = new List<SelectListItem>();
+        foreach (var upgrade in upgrades) {
+          upgadeOptions.Add(new SelectListItem {
+            Text = string.Format("Upgrade to offer '{0}' - Option: {1}", upgrade.TargetOfferName, upgrade.UpgradeType),
+            Value = string.Format("{0}|{1}", upgrade.TargetOfferId, upgrade.UpgradeType)
+          });
+        }
+        viewModel.UpgradeOptions = upgadeOptions;
+
+        return View(viewModel);
+      }
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<ActionResult> UpgradeSubscription(string customerId, string subscriptionId, string upgradeOfferSelected) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId) || string.IsNullOrEmpty(upgradeOfferSelected)) {
+        return RedirectToAction("Index");
+      } else {
+        // get customer
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+
+        // split upgrade up
+        var targetOfferId = upgradeOfferSelected.Split("|".ToCharArray())[0];
+        var targetUpgradeType = upgradeOfferSelected.Split("|".ToCharArray())[1];
+
+        // upgrade the subscription
+        await MySubscriptionRepository.UpgradeSubscrption(customerId, subscriptionId, targetOfferId, targetUpgradeType);
+
+        return RedirectToAction("Index");
+      }
+
+    }
 
   }
 }

@@ -1,0 +1,28 @@
+﻿@model pcsdk_order.Models.CustomerSubscriptionUpgradeViewModel
+
+@{
+  ViewBag.Title = "UpgradeSubscription";
+}
+
+<h2>Transition Offer</h2>
+
+@using (Html.BeginForm()) {
+  @Html.AntiForgeryToken()
+
+  @Html.Hidden("customerId", Model.Customer.Id)
+  @Html.Hidden("subscriptionId", Model.CustomerSubscription.Id)
+  
+  <h3>Current Subscription: @Html.Display(Model.CustomerSubscription.Offer.Name)</h3>
+
+  <div>
+    <h4>Select an upgrade option to perform</h4>
+    <hr />
+    @Html.DropDownListFor(model => model.UpgradeOfferSelected, Model.UpgradeOptions)
+  </div>
+  <p>
+    <input type="submit" value="upgrade subscription" class="btn btn-primary" /><br />
+  </p>
+  <p>
+    @Html.ActionLink("Back to List", "Index")
+  </p>
+}

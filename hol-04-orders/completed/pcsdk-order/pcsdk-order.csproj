@@ -200,6 +200,7 @@
     <Compile Include="Models\AdalTokenCache.cs" />
     <Compile Include="Models\ApplicationDbContext.cs" />
     <Compile Include="Models\CustomerAddLicenseViewModel.cs" />
+    <Compile Include="Models\CustomerSubscriptionUpgradeViewModel.cs" />
     <Compile Include="Models\CustomerSubscriptionViewModel.cs" />
     <Compile Include="Models\CustomerViewModel.cs" />
     <Compile Include="Models\MyCustomer.cs" />
@@ -208,6 +209,7 @@
     <Compile Include="Models\MyOfferRepository.cs" />
     <Compile Include="Models\MySubscription.cs" />
     <Compile Include="Models\MySubscriptionRepository.cs" />
+    <Compile Include="Models\MyUpgrade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="Utilities\PcAuthHelper.cs" />
@@ -257,6 +259,7 @@
     <Content Include="Views\Customer\Index.cshtml" />
     <Content Include="Views\Customer\Subscriptions.cshtml" />
     <Content Include="Views\Customer\AddLicense.cshtml" />
+    <Content Include="Views\Customer\UpgradeSubscription.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
