@@ -19,11 +19,6 @@ namespace pcsdk_order.Models {
       return _partner;
     }
 
-    //public static async Task<List<MyOffer>> GetOffers() {
-    //  List<MyOffer> offers = new List<MyOffer>();
-    //  return offers;
-    //}
-
     public static async Task<MyOffer> GetOffer(string offerId) {
       _partner = await GetPartner();
 

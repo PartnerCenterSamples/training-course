@@ -216,7 +216,6 @@ Before you start coding, add some NuGet package dependencies that you will need 
 
     ```c#
     public List<MyCustomer> Customers { get; set; }
-
     public MyCustomer Customer { get; set; }
     ```
 
@@ -302,7 +301,442 @@ At this point the plumbing has been setup for you to now add a controller and vi
 
 ## Exercise 2: Addressing Limit Exceeded Errors
 
-In this exercise you will take the .NET application you configured in the previous exercise in this hands-on-lab and update handle a common issue customers run into: identify and address the scenario when a customer tries to purchase licenses that exceed the max licenses allowed.
+In this exercise you will take the .NET application you configured in the previous exercise in this hands-on-lab and update handle a common issue customers run into: identify and address the scenario when a customer tries to purchase licenses that exceed the max licenses allowed. Instead, take the approach to only sell as many licenses as they can possibly have for a given subscription.
+
+> For this exercise you will need an existing customer that has at least one subscription for an office with a limited number of seats, for instance a subscription of **Office 365 Business Premium** with just a few licenses. If you don't have this, use the Partner Center dashboard site to set this up as the exercise in this HOL will assume you are editting an existing customer's subscriptions.
+
+### List All Customer's Subscriptions
+
+Add functionality to the ASP.NET MVC application to display a list of all the subscriptions, including licenses, for each customer.
+
+1. Within Visual Studio add a new offer model class & repository:
+  1. Right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **MyOffer.cs**.
+  1. Add the following public fields to class `MyOffer`:
+
+    ```c#
+    public string Id { get; set; }
+    public bool IsAddon { get; set; }
+    public string UnitType { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public int MinQuanity { get; set; }
+    public int MaxQuantity { get; set; }
+    public string Category { get; set; }
+    ```
+  1. Now create a new repository class: right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **MyOfferRepository.cs**.
+  1. Add the following references to the top of the `MyOfferRepository` class:
+
+    ```c#
+    using System.Threading.Tasks;
+    using Microsoft.Store.PartnerCenter;
+    using Microsoft.Store.PartnerCenter.Models.Subscriptions;
+    using pcsdk_order.Utilities;
+    ```
+  1. The `MySubscriptionRepository` class will eventually contain quite a few methods that need to get access to the Partner Center SDK, specifically obtaining an instance of the `IPartner` interface. Therefore, add the following private field and method to the `MySubscriptionRepository` class that will either return an existing instance of the partner operation object or create an instance for later use:
+
+    ```c#
+    private static IAggregatePartner _partner;
+    private static async Task<IAggregatePartner> GetPartner() {
+      if (_partner == null) {
+        _partner = await PcAuthHelper.GetPartnerCenterOps();
+      }
+
+      return _partner;
+    }
+    ```
+
+  1. Now add the two following methods to retrieve a specific offer from the Partner Center SDK & convert it it from the SDK object to the object in our application:
+
+    ```c#
+    public static async Task<MyOffer> GetOffer(string offerId) {
+      _partner = await GetPartner();
+
+      // get offer from PC & convert to local model
+      var pcOffer = await _partner.Offers.ByCountry("US").ById(offerId).GetAsync();
+      var offer = await ConvertOffer(pcOffer);
+
+      return offer;
+    }
+
+    private static async Task<MyOffer> ConvertOffer(Offer pcOffer) {
+      var offer = new MyOffer {
+        Id = pcOffer.Id,
+        Category = pcOffer.Category.Id,
+        UnitType = pcOffer.UnitType,
+        Name = pcOffer.Name,
+        Description = pcOffer.Description,
+        IsAddon = pcOffer.IsAddOn,
+        MinQuanity = pcOffer.MinimumQuantity,
+        MaxQuantity = pcOffer.MaximumQuantity
+      };
+
+      return offer;
+    }
+    ```
+
+1. Within Visual Studio add a new subscription model class & repository:
+  1. Right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **MySubscription.cs**.
+  1. Add the following public fields to this new class `MySubscription`:
+
+    ```c#
+    public string Id { get; set; }
+    public MyOffer Offer { get; set; }
+    public int Quantity { get; set; }
+    public string Status { get; set; }
+    ```
+
+  1. Now create a new repository class: right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **MySubscriptionRepository.cs**.
+  1. Add the following references to the top of the `MySubscriptionRepository` class:
+
+    ```c#
+    using System.Threading.Tasks;
+    using Microsoft.Store.PartnerCenter;
+    using Microsoft.Store.PartnerCenter.Models.Subscriptions;
+    using pcsdk_order.Utilities;
+    ```
+
+  1. Just like the `MyOfferRespository` class, the `MySubscriptionRepository` class will eventually contain quite a few methods that need to get access to the Partner Center SDK, specifically obtaining an instance of the `IPartner` interface. Therefore, add the following private field and method to the `MySubscriptionRepository` class that will either return an existing instance of the partner operation object or create an instance for later use:
+
+    ```c#
+    private static IAggregatePartner _partner;
+    private static async Task<IAggregatePartner> GetPartner() {
+      if (_partner == null) {
+        _partner = await PcAuthHelper.GetPartnerCenterOps();
+      }
+
+      return _partner;
+    }
+    ```
+
+  1. Now add the following method to get a list of all subscriptions for a specific customer as well as a specific subscription:
+
+    ```c#
+    public static async Task<List<MySubscription>> GetSubscriptions(string customerId) {
+      var pcSubscriptions = await (await GetPartner()).Customers.ById(customerId).Subscriptions.GetAsync();
+
+      List<MySubscription> subscriptions = new List<MySubscription>();
+
+      foreach(var pcSubscription in pcSubscriptions.Items) {
+        subscriptions.Add(await ConvertSubscription(pcSubscription));
+      }
+
+      return subscriptions;
+    }
+
+    public static async Task<MySubscription> GetSubscription(string customerId, string subscriptionId) {
+      var pcSubscription = await (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscriptionId).GetAsync();
+
+      return await ConvertSubscription(pcSubscription);
+    }
+    ```
+
+  1. Add the following private method to conver Partner Center objects to objects in your ASP.NET application:
+
+    ```c#
+    private static async Task<MySubscription> ConvertSubscription(Subscription pcSubscription) {
+      var subscription = new MySubscription {
+        Id = pcSubscription.Id,
+        Offer = await MyOfferRepository.GetOffer(pcSubscription.OfferId),
+        Quantity = pcSubscription.Quantity,
+        Status = pcSubscription.Status.ToString()
+      };
+
+      return subscription;
+    }
+    ```
+
+1. Next, create a view model class that the controller will populate and return to the view.
+  1. Right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **CustomerSubscriptionViewModel.cs**.
+  1. Add the following members to the `CustomerSubscriptionViewModel` class:
+
+    ```c#
+    public MyCustomer Customer { get; set; }
+    public List<MySubscription> CustomerSubscriptions { get; set; }
+    ```
+
+1. Update the `CustomerController` to show the subscriptions for a specific customer:
+  1. Add the following method to the **CustomerController** file to list all subscriptions for the specified customer:
+
+    ```c#
+    [Authorize]
+    public async Task<ActionResult> Subscriptions(string id) {
+      // if no customer provided, redirect to list 
+      if (string.IsNullOrEmpty(id)) {
+        return RedirectToAction("Index");
+      } else {
+        CustomerSubscriptionViewModel viewModel = new CustomerSubscriptionViewModel();
+
+        // get customer & add to viewmodel
+        var customer = await MyCustomerRepository.GetCustomer(id);
+        viewModel.Customer = customer;
+
+        // get all subscriptions customer currently has
+        var subscriptions = await MySubscriptionRepository.GetSubscriptions(id);
+        viewModel.CustomerSubscriptions = subscriptions.OrderBy(s => s.Offer.Name).ToList();
+
+        return View(viewModel);
+      }
+    }
+    ```
+
+1. Now add the view for the subscription list.
+  1. Within the `Index` action method, right-click and select **Add View**.
+    1. Leave the **View name** as **Index**.
+    1. Set the **Template** to **List**.
+    1. Set the **Model class** to **CustomerSubscriptionViewModel**.
+    1. Click **Add**.
+  1. When the `Index.cshtml` file loads...
+    1. Change the model on the first line to:
+
+      ```razor
+      @model pcsdk_order.Models.CustomerSubscriptionViewModel
+      ```
+
+    1. Update the page title to list the customer name in the header:
+
+      ```razor
+      <h2>@Model.Customer.CompanyName - Subscriptions</h2>
+      ```
+
+    1. Remove the remaining markup in the view file as you will write it by hand.
+    1. Add the following code for the header part of the table that will display all the customer's subscriptions:
+
+      ```razor
+      <table class="table">
+        <tr>
+          <th>Subscription</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </table>
+      ```
+
+    1. Now, add a `foreach` loop to the body of the table to write out all subscriptions
+
+      ```razor
+      @foreach (var item in Model.CustomerSubscriptions) {
+        <tr>
+          <td>
+            @Html.HiddenFor(modelItem => item.Id)
+            <strong>@Html.DisplayFor(modelItem => item.Offer.Name)</strong><br />
+            <em>@Html.DisplayFor(modelItem => item.Offer.Description)</em>
+          </td>
+          <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
+          <td>@Html.DisplayFor(modelItem => item.Status)</td>
+          <td></td>
+        </tr>
+      }
+      ```
+
+1. Test the web application to ensure you can see a list of subscriptions for the selected customer:
+  1. Press **[F5]** to start the application.
+  1. After logging in, click the **Customers** link in the top navigation to see a list of customers:
+
+    ![](assets/customer-list.png)
+
+  1. Click the **Subscriptions** link for one of the customers to see a list of subscriptions:
+
+    ![](assets/subscription-list-01.png)
+
+  1. Now that the application is working, add functionality to add licenses to an existing subscription.
+
+
+### Add Licenses to Subscription
+
+1. Update the list of subscriptions to show a link to add additional licenses if the offer allows for it:
+  1. Open the `Subscriptions.cshtml` file in Visual Studio.
+  1. Locate the empty table cell in the `foreach` loop and replace it with the following:
+
+    ```razor
+    <td>
+      @if (item.Offer.UnitType == "Licenses") {
+        if (item.Offer.MaxQuantity > item.Quantity) {
+          @Html.ActionLink("add licenses", "AddLicense", "Customer",
+                  new {
+                    customerId = Model.Customer.Id,
+                    subscriptionId = item.Id
+                  }, null)
+        }
+      }
+    </td>
+    ```
+
+1. Add a new view model class for this route:
+  1. Within Visual Studio, right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **CustomerAddLicenseViewModel.cs**.
+  1. Add the following reference to the top of the `CustomerAddLicenseViewModel` class:
+
+    ```c#
+    using System.Web.Mvc;
+    ```
+
+  1. Now add the following members to the `CustomerAddLicenseViewModel` class:
+
+    ```c#
+    public MyCustomer Customer { get; set; }
+    public MySubscription CustomerSubscription { get; set; }
+    public string LicensesToAdd { get; set; }
+    public IEnumerable<SelectListItem> AvailableLicenseQuantity { get; set; }
+    public CustomerAddLicenseViewModel() {
+      AvailableLicenseQuantity = new List<SelectListItem>();
+    }
+    ```
+
+1. Add a new method to the `CustomerController` to handle the case when a user navigates to the page to add licenses
+
+  Notice that you will create options for only the number of licenses that the customer can add to the subscription which it supports. This will protect you from hitting the exception when trying to add too many licenses to a subscription. Note that it also limits adding only 1000 licenses at a time. 
+
+  ```c#
+  [Authorize]
+  [HttpGet]
+  public async Task<ActionResult> AddLicense(string customerId, string subscriptionId) {
+    // if no ids provided, redirect to list 
+    if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId)) {
+      return RedirectToAction("Index");
+    } else {
+      CustomerAddLicenseViewModel viewModel = new CustomerAddLicenseViewModel();
+
+      // get customer & add to viewmodel
+      var customer = await MyCustomerRepository.GetCustomer(customerId);
+      viewModel.Customer = customer;
+
+      // get subscription
+      var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+      viewModel.CustomerSubscription = subscription;
+
+      // create lookup for licenses available for purchase
+      List<SelectListItem> dropDownItems = new List<SelectListItem>();
+      for (int index = 1; index + subscription.Quantity <= subscription.Offer.MaxQuantity; index++) {
+        dropDownItems.Add(new SelectListItem {
+          Text = string.Format("add {0} more license(s) - total of {1}", index, subscription.Quantity + index),
+          Value = index.ToString()
+        });
+        // limit adding only 1000 licenses at a time
+        if (index == 1000) {
+          break;
+        }
+      }
+      viewModel.AvailableLicenseQuantity = dropDownItems;
+
+     0 return View(viewModel);
+    }
+  }
+  ```
+
+1. Next, add a method to the `CustomerController` to handle when the form is submitted:
+
+  ```c#
+  [Authorize]
+  [HttpPost]
+  public async Task<ActionResult> AddLicense(string customerId, string subscriptionId, string licensesToAdd) {
+    // if no ids provided, redirect to list 
+    if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId) || string.IsNullOrEmpty(licensesToAdd)) {
+      return RedirectToAction("Index");
+    } else {
+      // get customer
+      var customer = await MyCustomerRepository.GetCustomer(customerId);
+
+      // get subscription
+      var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+
+      // update quantity and save
+      subscription.Quantity += Convert.ToInt16(licensesToAdd);
+      await MySubscriptionRepository.UpdateSubscription(customerId, subscription);
+
+
+      return RedirectToAction("Index");
+    }
+  }
+  ```
+
+1. Finally, add a method to the `MySubscriptionRespository` class to handle the action taken in this method:
+
+  ```c#
+  public static async Task UpdateSubscription(string customerId, MySubscription subscription) {
+    // get subscription
+    var pcSubscription = await(await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscription.Id).GetAsync();
+    // update quantity 
+    pcSubscription.Quantity = subscription.Quantity;
+    // update subscription
+    await (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscription.Id).PatchAsync(pcSubscription);
+  }
+  ```
+
+1. The new route needs a view to present the view model.
+  1. In the `CustomerController` class, within the `AddLicense` method, right-click and select **Add View**.
+    1. Leave the **View name** as **Index**.
+    1. Set the **Template** to **Empty**.
+    1. Set the **Model class** to **CustomerAddLicenseViewModel**.
+    1. Click **Add**.
+  1. When the `Index.cshtml` file loads...
+    1. Change the title of the page to:
+
+      ```html
+      <h2>Add Licenses to Existing Subscription</h2>
+      ```
+
+    1. Add a new form with two hidden fields:
+
+      ```razor
+      @using (Html.BeginForm()) {
+        @Html.AntiForgeryToken()
+
+        @Html.Hidden("customerId", Model.Customer.Id)
+        @Html.Hidden("subscriptionId", Model.CustomerSubscription.Id)
+      }
+      ```
+
+    1. Add the following to the form to display the current subscription and total licenses the customer currently has. It will then display a drop down list for all options they can add licenses for:
+
+      ```razor
+      <div>
+        <h3>Current Subscription: @Html.DisplayFor(model => model.CustomerSubscription.Offer.Name)</h3>
+        <h3>Current Number of Licenses: @Html.DisplayFor(model => model.CustomerSubscription.Quantity)</h3>
+        <hr />
+        <h4>How many licenses do you want to add?</h4>
+        @Html.DropDownListFor(model => model.LicensesToAdd, Model.AvailableLicenseQuantity)
+      </div>
+      <p>
+        <input type="submit" value="Add licenses" class="btn btn-primary" /><br />
+      </p>
+      ```
+
+1. An edittable view is going to use an antiforgery token to protect the web application. By default the unique ID for a user is not checked so you need to set it within the startup of the application:
+  1. Open the `Global.asax.cs` file.
+  1. Add the following references to the top of the file:
+
+    ```c#
+    using System.IdentityModel.Claims;
+    using System.Web.Helpers;
+    ```
+
+  1. Add the following line to the existing `Application_Start()` method to configure the unique claim type identifier:
+
+    ```c#
+    AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.NameIdentifier.ToString();
+    ```
+
+1. Test the web application to ensure you can see a list of subscriptions for the selected customer:
+  1. Press **[F5]** to start the application.
+  1. After logging in, click the **Customers** link in the top navigation to see a list of customers:
+
+    ![](assets/customer-list.png)
+
+  1. Click the **Subscriptions** link for one of the customers to see a list of subscriptions. This time you should see an option to add licenses to subscriptions that are not of type Azure:
+
+    ![](assets/subscription-list-02.png)
+
+  1. Click the **add licenses** link for one of the subscriptions with a max limit. You will then be presented with a form where you can select licenses to add to the subscription. Select a low number, keeping in mind how many licenses they started with and how many you are adding, and click the **add licenses** button:
+
+    ![](assets/add-licenses.png)
+
+  1. Navigate back to the list of subscriptions for this customer to see how the license count has increased.
 
 ## Exercise 3: Transitioning an Office 365 Subscription
 
