@@ -740,4 +740,238 @@ Add functionality to the ASP.NET MVC application to display a list of all the su
 
 ## Exercise 3: Transitioning an Office 365 Subscription
 
-In the case of the previous scenario, one option is for a customer to upgrade an existing license from one to another to address he limit exceeded error. In this exercise you will take the .NET application you configured in the previous exercise to handle this scenario.
+In the case of the previous scenario, one option is for a customer to upgrade an existing license from one to another to avoid the limit exceeded error returned by the Partner Center API. However what happens when a customer needs more licenses than a subscription supports? In this case they need to upgrade their license from one type to another type, such as small business to enterprise. In this exercise you will address this scenario and demonstrate how to upgrade a license, also referred to as *transitioning*.
+
+1. First, create a new upgrade class that will be used in our web application:
+  1. Right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **MyUpgrade.cs**.
+  1. Add the following public fields and constructor to this new class `MyUpgrade`:
+
+    ```c#
+    public string TargetOfferId { get; set; }
+    public string TargetOfferName { get; set; }
+    public string TargetOfferDescription { get; set; }
+    public int Quantity { get; set; }
+    public string UpgradeType { get; set; }
+
+    public MyUpgrade() {
+      Quantity = 0;
+      UpgradeType = "None";
+    }
+    ```
+
+1. With the upgrade class created, now update the `MySubscriptionRepository` class to support upgrade actions.
+  1. Add the following method to the `MySubscriptionRepository` class in the **MySubscriptionRepository.cs** file to get a list of all the available upgrade options for a specific subscription:
+
+    ```c#
+    public static async Task<List<MyUpgrade>> GetUpgradeOptions(string customerId, string subscriptionId) {
+      var pcSubscription = (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscriptionId);
+      var pcUpgrades = await pcSubscription.Upgrades.GetAsync();
+
+      List<MyUpgrade> upgrades = new List<MyUpgrade>();
+
+      foreach(var pcUpgrade in pcUpgrades.Items) {
+        upgrades.Add(await ConvertUpgradeOffer(pcUpgrade));
+      }
+
+      return upgrades;
+    }
+    ```
+
+  1. Next, add the following method to convert the upgrade object from the Partner Center SDK to our internal class:
+
+    ```c#
+    private static async Task<MyUpgrade> ConvertUpgradeOffer(Upgrade pcUpgrade) {
+      var upgrade = new MyUpgrade {
+        TargetOfferId = pcUpgrade.TargetOffer.Id,
+        TargetOfferName = pcUpgrade.TargetOffer.Name,
+        TargetOfferDescription = pcUpgrade.TargetOffer.Description,
+        Quantity = pcUpgrade.Quantity,
+        UpgradeType = pcUpgrade.UpgradeType.ToString()
+      };
+
+      return upgrade;
+    }
+    ```
+
+  1. Lastly, add the following method to take an upgrade option and submit it to Partner Center:
+
+    ```c#
+    public static async Task UpgradeSubscrption(string customerId, string subscriptionId, string targetOfferId, string targetUpgradeType) {
+      var pcSubscription = (await GetPartner()).Customers.ById(customerId).Subscriptions.ById(subscriptionId);
+      var pcUpgrades = await pcSubscription.Upgrades.GetAsync();
+
+      // get the one selected
+      var upgradeSelected = pcUpgrades.Items.First(upgrade => (upgrade.TargetOffer.Id == targetOfferId && upgrade.UpgradeType.ToString() == targetUpgradeType));
+      // upgrade
+      var result = pcSubscription.Upgrades.Create(upgradeSelected);
+      // handle issues
+    }
+    ```
+
+1. Create a new view model class that will be used to pass upgrade options to the view from the customer controller.
+  1. Right-click the **Models** folder and select **Add &raquo; New Item**.
+  1. Select **Class** and set the new file's name to **CustomerSubscriptionUpgradeViewModel.cs**.
+  1. Add the following reference to the top of the **CustomerSubscriptionUpgradeViewModel.cs** file:
+
+    ```c#
+    using System.Web.Mvc;
+    ```
+
+  1. Add the following public fields and constructor to this new class `CustomerSubscriptionUpgradeViewModel`:
+
+    ```c#
+    public MyCustomer Customer { get; set; }
+
+    public MySubscription CustomerSubscription { get; set; }
+
+    public string UpgradeOfferSelected { get; set; }
+
+    public IEnumerable<SelectListItem> UpgradeOptions { get; set; }
+
+    public CustomerSubscriptionUpgradeViewModel() {
+      UpgradeOptions = new List<SelectListItem>();
+    }
+    ```
+
+1. Now you need to update the `CustomerController` to have a HTTP GET & POST handler for the upgrades.
+  1. Open the **CustomerController.cs** file in Visual Studio.
+  1. Add the following method to the `CustomerController` class. This method will handle creating a view model with all upgrade options the user can pick from:
+
+    ```c#
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult> UpgradeSubscription(string customerId, string subscriptionId) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId)) {
+        return RedirectToAction("Index");
+      } else {
+        CustomerSubscriptionUpgradeViewModel viewModel = new CustomerSubscriptionUpgradeViewModel();
+
+        // get customer & add to viewmodel
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+        viewModel.Customer = customer;
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+        viewModel.CustomerSubscription = subscription;
+
+        // get upgrade options
+        var upgrades = await MySubscriptionRepository.GetUpgradeOptions(customerId, subscriptionId);
+        List<SelectListItem> upgadeOptions = new List<SelectListItem>();
+        foreach (var upgrade in upgrades) {
+          upgadeOptions.Add(new SelectListItem {
+            Text = string.Format("Upgrade to offer '{0}' - Option: {1}", upgrade.TargetOfferName, upgrade.UpgradeType),
+            Value = string.Format("{0}|{1}", upgrade.TargetOfferId, upgrade.UpgradeType)
+          });
+        }
+        viewModel.UpgradeOptions = upgadeOptions;
+
+        return View(viewModel);
+      }
+    }
+    ```
+
+  1. Finally, add the following method to handle the HTTP POST when the upgrade form is submitted:
+
+    ```c#
+    [Authorize]
+    [HttpPost]
+    public async Task<ActionResult> UpgradeSubscription(string customerId, string subscriptionId, string upgradeOfferSelected) {
+      // if no ids provided, redirect to list 
+      if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(subscriptionId) || string.IsNullOrEmpty(upgradeOfferSelected)) {
+        return RedirectToAction("Index");
+      } else {
+        // get customer
+        var customer = await MyCustomerRepository.GetCustomer(customerId);
+
+        // get subscription
+        var subscription = await MySubscriptionRepository.GetSubscription(customerId, subscriptionId);
+
+        // split upgrade up
+        var targetOfferId = upgradeOfferSelected.Split("|".ToCharArray())[0];
+        var targetUpgradeType = upgradeOfferSelected.Split("|".ToCharArray())[1];
+
+        // upgrade the subscription
+        await MySubscriptionRepository.UpgradeSubscrption(customerId, subscriptionId, targetOfferId, targetUpgradeType);
+
+        return RedirectToAction("Index");
+      }
+
+    }
+    ```
+
+1. Now you need to make some updates to a few existing views before creating a new view.
+  1. Open the **Subscriptions.cshtml** view.
+    1. Locate the `if` statement that checks if the current offer's max quantity is greater than the current subscriptions quantity.
+    1. This `if` statement does not have an `else` block... add one that will give the user an option to upgrade the subscription if they have maxed out their available licenses:
+
+      ```c#
+      } else {
+        @Html.Raw("Max license limit reached, would you like to ") @Html.ActionLink("transition", "UpgradeSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = item.Id }, null) @Html.Raw(" to another license?")
+      }
+      ```
+  1. Open the **AddLicense.cshtml** view.
+    1. Locate the submit button at the end of the view.
+    1. Add the following HTML block just before the `<p>` that encloses the submit button:
+
+      ```c#
+      <p>
+        Need more licenses? The subscription you are currently on only allows up to @Html.DisplayFor(model => model.CustomerSubscription.Offer.MaxQuantity) licenses.<br />
+        If you need more you may need to @Html.ActionLink("transition your existing subscription to a new subscription", "UpgradeSubscription", "Customer", new { customerId = Model.Customer.Id, subscriptionId = Model.CustomerSubscription.Id }, null).
+      </p>
+      ```
+
+1. Now add the view for upgrading a subscription.
+  1. Go back to the **CustomerController.cs** file and locate the HTTP GET method for the `UpgradeSubscription()` method.
+  1. Within the `UpgradeSubscription` action method, right-click and select **Add View**.
+    1. Leave the **View name** as **Index**.
+    1. Set the **Template** to **Empty**.
+    1. Set the **Model class** to **CustomerSubscriptionUpgradeViewModel**.
+    1. Click **Add**.
+  1. When the `UpgradeSubscription.cshtml` file loads..
+  1. Add the following code to the view. This will create a new form, add a few hidden fields and add a dropdown list for the user to select what upgrade they want to perform:
+
+    ```c#
+    <h2>Transition Offer</h2>
+
+    @using (Html.BeginForm()) {
+      @Html.AntiForgeryToken()
+
+      @Html.Hidden("customerId", Model.Customer.Id)
+      @Html.Hidden("subscriptionId", Model.CustomerSubscription.Id)
+      
+      <h3>Current Subscription: @Html.Display(Model.CustomerSubscription.Offer.Name)</h3>
+
+      <div>
+        <h4>Select an upgrade option to perform</h4>
+        <hr />
+        @Html.DropDownListFor(model => model.UpgradeOfferSelected, Model.UpgradeOptions)
+      </div>
+      <p>
+        <input type="submit" value="upgrade subscription" class="btn btn-primary" /><br />
+      </p>
+      <p>
+        @Html.ActionLink("Back to List", "Index")
+      </p>
+    }
+    ```
+
+1. Test the web application to ensure you can see a list of subscriptions for the selected customer:
+  1. Press **[F5]** to start the application.
+  1. After logging in, click the **Customers** link in the top navigation to see a list of customers:
+
+    ![](assets/customer-list.png)
+
+  1. Click the **Subscriptions** link for one of the customers to see a list of subscriptions. Click the **add licenses** link next to one of the subscriptions that can be upgraded, such as **Office 365 Business Premium**
+
+    ![](assets/subscription-list-02.png)
+
+  1. On the **Add License to Existing Subscription** page, click the link **transition your existing subscription to a new subscription**.
+  1. Select one of the upgrade options and click the **upgrade subscription** button.
+
+    ![](assets/upgrade-subscription-01.png)
+
+  1. When the upgrade completes, it will take you back to the main custom list. Select the customer to view a list of the subscriptions. You will see the old subscription is now marked as suspended and replaced with the new active subscription: 
+
+    ![](assets/upgrade-subscription-02.png)
