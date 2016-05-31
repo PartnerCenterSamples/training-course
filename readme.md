@@ -78,6 +78,7 @@ The labs are written for developers using the .NET Framework in C# using Visual 
 
 | Date | Comment |
 | ----: | ------- |
+| May 31, 2016 | Update module 13 with UX from Partner Center dashboard for Azure spending limit. |
 | April 27, 2016 | Added HOL #5. |
 | April 19, 2016 | Added HOL #4. |
 | April 18, 2016 | Typo fix in HOL#1 for Partner Center SDK endpoint. |
