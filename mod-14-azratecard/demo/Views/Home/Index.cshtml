@@ -1,0 +1,36 @@
+﻿@{
+  ViewBag.Title = "Microsoft Azure Billing Explorer";
+}
+
+<div class="jumbotron">
+  <h1>Microsoft Azure Billing Explorer</h1>
+  <p class="lead">This application enables you to easily explore the Azure Billing APIs: <strong>Rate Card</strong> & </strong>Usage</strong>.</p>
+</div>
+
+<div class="row">
+  <div class="col-md-4">
+    <h2>View All Subscriptions</h2>
+    <p>Get a list of all the Azure subscriptions that this application has been granted access to.</p>
+    <p>@Html.ActionLink("View Subscriptions", "Index", "Subscriptions", null, new { @class = "btn btn-primary" })</p>
+  </div>
+  <div class="col-md-4">
+    <h2>View Azure Rates</h2>
+    <p>
+      Using the Azure Rate Card API, you can view all the pricing for Azure resources in all data centers, localized by currency & locale, for specific regions.
+    </p>
+    <p>
+      <em>If you haven't selected a subscription, you will be prompted to do that first.</em>
+    </p>
+    <p>@Html.ActionLink("View Rates", "Index", "Rates", null, new { @class = "btn btn-primary" })</p>
+  </div>
+  <div class="col-md-4">
+    <h2>View Azure Consumption Usage</h2>
+    <p>
+      Using the Azure Billing API, you can view all usage consumption data for your Azure subscription.
+    </p>
+    <p>
+      <em>If you haven't selected a subscription, you will be prompted to do that first.</em>
+    </p>
+    <p>@Html.ActionLink("View Usage Consumption", "Index", "Usage", null, new { @class = "btn btn-primary" })</p>
+  </div>
+</div>

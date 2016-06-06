@@ -1,0 +1,35 @@
+﻿@model  AzureBillingViewer.Models.AzureSubscriptionsViewModel
+
+@{
+  ViewBag.Title = "Index";
+}
+
+<h2>Your Azure Subscriptions</h2>
+
+<p>
+  Select one of the following Azure subscriptions to use to query for resource (<em>meter</em>) rates and consumption usage data.
+</p>
+
+<p>
+  Only subscriptions that this application has access to will appear on this page. To grant this application access an Azure subscription, refer to the following Azure documentation: <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/#add-access">Azure: Use Role Assignments to Manage Access to your Azure Active Directory Resources | Add Access</a>.
+</p>
+
+<table class="table">
+  <tr>
+    <th>Subscription Name</th>
+    <th>Subscription ID</th>
+    <th></th>
+  </tr>
+
+  @foreach (var item in Model.AzureSubscriptions) {
+    <tr>
+      <td>@Html.DisplayFor(modelItem => item.DisplayName)</td>
+      <td>@Html.DisplayFor(modelItem => item.SubscriptionId)</td>
+      <td>
+        @Html.RouteLink("View Rates", "SubscriptionDetails", new { controller = "Rates", subscriptionId = item.SubscriptionId }, new { @class = "btn btn-primary" })
+        @Html.RouteLink("View Usage", "SubscriptionDetails", new { controller = "Usage", subscriptionId = item.SubscriptionId }, new { @class = "btn btn-primary" })
+      </td>
+    </tr>
+  }
+
+</table>

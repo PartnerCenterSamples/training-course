@@ -1,0 +1,308 @@
+﻿@model AzureBillingViewer.Models.AzureRatesViewModel
+
+@{
+  ViewBag.Title = "Index";
+}
+<a name="backtotop"></a>
+
+<h2>Azure Resource Rates</h2>
+
+This page lists all the resource (aka: meter) rates based on the filter criteria that was set.
+
+<div class="container">
+  <div class="row">
+    <!-- query details -->
+    <div class="col-md-6">
+      <form class="form-horizontal">
+        <div class="row form-group">
+          @Html.LabelFor(model => model.AzureSubscriptionId, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static" style="font-family:'Courier New';font-weight:bold">@Html.DisplayFor(model => model.AzureSubscriptionId)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.AzureOfferName, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.AzureOfferName)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.OfferCredit, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.OfferCredit)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.EffectiveDate, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            @if (Model.EffectiveDate != DateTime.MinValue) {
+              <p class="form-control-static">@Html.DisplayFor(model => model.EffectiveDate)</p>
+            }
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.MeterRegion, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.MeterRegion)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.IsTaxIncluded, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.IsTaxIncluded)</p>
+          </div>
+        </div>
+      </form>
+    </div>
+    <!-- /query details -->
+    <!-- query filter controls -->
+    <div class="panel panel-default col-md-6">
+      <div class="panel-body">
+        <h4>Rate Query Filters:</h4>
+        <form class="form-horizontal">
+          <div class="row form-group">
+            @Html.LabelFor(model => model.AzureOfferId, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-sm-10">
+              @Html.EditorFor(model => model.AzureOfferId, new { htmlAttributes = new { @class = "form-control" } })
+              <br /> or...
+              <button class="btn btn-default dropdown-toggle" type="button" id="categoryJumper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Pick an offer...
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="categoryJumper">
+                @{
+                  foreach (var azureOffer in Model.AvailableAzureOffers) {
+                    <li><a href="#" onclick="javascript:$('#AzureOfferId').val('@azureOffer.Value');">@azureOffer.Text</a></li>
+                  }
+                }
+              </ul>
+            </div>
+          </div>
+          <div class="row form-group">
+            @Html.LabelFor(model => model.AzureRegionId, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-sm-10">
+              @Html.DropDownListFor(model => model.AzureRegionId, Model.AvailableAzureRegions, new { @class = "form-control" })
+            </div>
+          </div>
+          <div class="row form-group">
+            @Html.LabelFor(model => model.LocaleId, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-sm-10">
+              @Html.DropDownListFor(model => model.LocaleId, Model.AvailableLocales, new { @class = "form-control" })
+            </div>
+          </div>
+          <div class="row form-group">
+            <div class="col-md-offset-2 col-md-12">
+              <input type="submit" value="Update Rate List" class="btn btn-primary" />
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- /query filter controls -->
+  </div>
+</div>
+
+
+@{
+  // create a hash list of all meter categories & subcategories
+  var hashedCategoryList = new Dictionary<string, string>();
+
+  // get list of all meters grouped by category
+  var metersGroupedByCategory = from meter in Model.Meters
+                                group meter by meter.MeterCategory into categoryGroup
+                                orderby categoryGroup.Key
+                                select categoryGroup;
+  foreach (var cat in metersGroupedByCategory) {
+    // add category to hash list
+    hashedCategoryList.Add(cat.Key, Model.GetHashedString(cat.Key));
+
+    // get list of all meters grouped by subcategory
+    var meterSubcategories = from meter in cat
+                             group meter by meter.MeterSubCategory into subCategoryGroup
+                             orderby subCategoryGroup.Key
+                             select subCategoryGroup;
+    foreach (var subcat in meterSubcategories) {
+      // add subcategory to hash list if not already present
+      var subcatId = string.Concat(cat.Key, " | ", subcat.Key);
+      if (!hashedCategoryList.ContainsKey(subcatId)) {
+        hashedCategoryList.Add(subcatId, Model.GetHashedString(subcatId));
+      }
+    }
+  }
+}
+
+<div class="dropdown">
+  <button class="btn btn-info dropdown-toggle" type="button" id="categoryJumper" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Jump to a meter category...
+    <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="categoryJumper">
+    @{
+      foreach (var meterCategory in hashedCategoryList) {
+        <li><a href="#meterCategory-@meterCategory.Value">@meterCategory.Key</a></li>
+      }
+    }
+  </ul>
+</div>
+
+<div class="clearfix"></div>
+
+<!-- meters -->
+@{
+  // display meters
+  foreach (var categoryOfMeters in metersGroupedByCategory) {
+    // get the hash of the category
+    var catID = hashedCategoryList.First(x => x.Key == categoryOfMeters.Key).Value;
+
+    <a name="meterCategory-@catID"></a>
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">@categoryOfMeters.Key</h3>
+      </div>
+
+      @{
+        // get all the subcategories
+        var metersGroupedBySubCategory = from meter in categoryOfMeters
+                                         group meter by meter.MeterSubCategory into subCategoryGroup
+                                         orderby subCategoryGroup.Key
+                                         select subCategoryGroup;
+      }
+
+
+      @if (metersGroupedBySubCategory.Count() > 1) {
+      <text><!-- if there are subcategories, show panel for each of those... --></text>
+      <div class="panel-body">
+        <text>Subcategories of meters in the <em>@categoryOfMeters.Key</em> category.<br /><br /></text>
+        <div class="panel-group" id="@catID" role="tablist" aria-multiselectable="true">
+          @{foreach (var subCategoryOffers in metersGroupedBySubCategory) {
+                var catSubCat = string.Concat(categoryOfMeters.Key, " | ", subCategoryOffers.Key);
+                var subcatID = hashedCategoryList.First(x => x.Key == catSubCat).Value;
+
+            <a name="meterCategory-@subcatID"></a>
+
+            <div class="panel panel-default">
+              <div class="panel-heading" role="tab" id="@subcatID">
+                <h3 class="panel-title">
+                  <a role="button" data-toggle="collapse" data-parent="#@catID" href="#collapse-@subcatID" aria-expanded="false" aria-controls="collapse-@subcatID">@categoryOfMeters.Key : @subCategoryOffers.Key</a>
+                </h3>
+              </div>
+              <div id="collapse-@subcatID" class="panel-collapse collapse" role="tabpanel" aria-labelledby="@subcatID">
+                <div class="panel-body">
+                  Meters in the subcategory <em>@subCategoryOffers.Key</em>.
+                </div>
+                <table class="table table-bordered table-striped table-condensed">
+                  <thead>
+                    <tr>
+                      <th>Meter</th>
+                      <th>Meter Region</th>
+                      <th>Rates</th>
+                      <th>Effective Date</th>
+                    </tr>
+                  </thead>
+                  @{ foreach (var meter in subCategoryOffers) {
+                      <tbody>
+                        <tr>
+                          <td>
+                            @meter.MeterName <br />
+                            <span style="font-family:'Courier New'; font-weight:bold;">@meter.MeterId</span><br /><br />
+                            <em>Billed in @meter.Unit</em>
+                            @{
+                                  if (Model.ExcludedMeterIds.Where(em => em == meter.MeterId).Any()) {
+                                <p style="text-align:center;"><button type="button" class="btn btn-lg btn-info" disabled="disabled">excluded from discounts</button></p>
+                                  }
+                            }
+                          </td>
+                          <td>@meter.MeterRegion</td>
+                          <td>
+                            <em>Included quantity: @meter.IncludedQuantity @meter.Unit</em><br />
+                            <table class="table">
+                              <thead>
+                                <tr>
+                                  <th>Number of @meter.Unit</th>
+                                  <th>Price Per Month</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @{ foreach (var meterRate in meter.MeterRates) {
+                                    <tr>
+                                      <td>@meterRate.Key.ToString("#,##0")</td>
+                                      <td>@meterRate.Value.ToString("C4")</td>
+                                    </tr>
+                                      }
+                                }
+                              </tbody>
+                            </table>
+                          </td>
+                          <td>@meter.EffectiveDate.ToString("MMMM dd, yyy")<br />@meter.EffectiveDate.ToString("HH:mm:ss") UTC</td>
+                        </tr>
+                      </tbody>
+                                      }
+                  }
+                </table>
+              </div>
+            </div>
+                                      } // foreach (var subCategoryOffers in metersGroupedBySubCategory)
+          }
+        </div>
+      </div>
+      <div class="panel panel-footer"><a href="#backtotop">back to top</a></div>
+      } else {
+      <text><!-- else there is only one, so show that instead --></text>
+      <div class="panel-body">
+        <text>Meters in the <em>@categoryOfMeters.Key</em> category.<br /><br /></text>
+      </div>
+      <table class="table table-bordered table-striped table-condensed">
+        <thead>
+          <tr>
+            <th>Meter</th>
+            <th>Meter Region</th>
+            <th>Rates</th>
+            <th>Effective Date</th>
+          </tr>
+        </thead>
+        @{ foreach (var meter in categoryOfMeters) {
+          <tbody>
+            <tr>
+              <td>
+                @meter.MeterName <br />
+                <span style="font-family:'Courier New'; font-weight:bold;">@meter.MeterId</span><br /><br />
+                <em>Billed in @meter.Unit</em>
+                @{
+                      if (Model.ExcludedMeterIds.Where(em => em == meter.MeterId).Any()) {
+                    <p style="text-align:center;"><button type="button" class="btn btn-lg btn-info" disabled="disabled">excluded from discounts</button></p>
+                      }
+                }
+              </td>
+              <td>@meter.MeterRegion</td>
+              <td>
+                <em>Included quantity: @meter.IncludedQuantity @meter.Unit</em><br />
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Number of @meter.Unit</th>
+                      <th>Price Per Month</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @{ foreach (var meterRate in meter.MeterRates) {
+                        <tr>
+                          <td>@meterRate.Key.ToString("#,##0")</td>
+                          <td>@meterRate.Value.ToString("C4")</td>
+                        </tr>
+                          }
+                    }
+                  </tbody>
+                </table>
+              </td>
+              <td>@meter.EffectiveDate.ToString("MMMM dd, yyy")<br />@meter.EffectiveDate.ToString("HH:mm:ss") UTC</td>
+            </tr>
+          </tbody>
+                          }
+        }
+      </table>
+      <div class="panel panel-footer"><a href="#backtotop">back to top</a></div>
+      }
+    </div>
+                      } //foreach (var categoryOfMeters in metersGroupedByCategory)
+}

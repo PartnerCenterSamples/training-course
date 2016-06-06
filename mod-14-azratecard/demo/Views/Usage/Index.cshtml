@@ -1,0 +1,221 @@
+﻿@model  AzureBillingViewer.Models.AzureUsageViewModel
+
+@{
+  ViewBag.Title = "Index";
+}
+<a name="backtotop"></a>
+
+<h2>Azure Consumption Usage Detail</h2>
+
+This page lists the usage data for based on the filter criteria that was set.
+
+<div class="container">
+  <div class="row">
+    <!-- query details -->
+    <div class="col-md-6">
+      <form class="form-horizontal">
+        <div class="row form-group">
+          @Html.LabelFor(model => model.AzureSubscriptionId, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static" style="font-family:'Courier New';font-weight:bold">@Html.DisplayFor(model => model.AzureSubscriptionId)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.UsageDetailReportId, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.UsageDetailReportId)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.UsageDetailReportName, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.UsageDetailReportName)</p>
+          </div>
+        </div>
+        <div class="row form-group">
+          @Html.LabelFor(model => model.UsageDetailReportType, htmlAttributes: new { @class = "control-label col-md-4" })
+          <div class="col-sm-8">
+            <p class="form-control-static">@Html.DisplayFor(model => model.UsageDetailReportType)</p>
+          </div>
+        </div>
+      </form>
+    </div>
+    <!-- /query details -->
+    <!-- query filter controls -->
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <h4>Usage Query Filters:</h4>
+          <form class="form-horizontal">
+            <div class="row form-group">
+              @Html.LabelFor(model => model.ReportedStart, htmlAttributes: new { @class = "control-label col-sm-5" })
+              <div class="input-group date col-sm-5" id="startDatePicker">
+                @Html.EditorFor(model => model.ReportedStart, new { htmlAttributes = new { @class = "form-control" } })
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
+            <div class="row form-group">
+              @Html.LabelFor(model => model.ReportedEnd, htmlAttributes: new { @class = "control-label col-sm-5" })
+              <div class="input-group date col-sm-5" id="endDatePicker">
+                @Html.EditorFor(model => model.ReportedEnd, new { htmlAttributes = new { @class = "form-control" } })
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
+            <div class="row form-group">
+              @Html.LabelFor(model => model.Granularity, htmlAttributes: new { @class = "control-label col-sm-5" })
+              <div class="input-group date col-sm-5" id="endDatePicker">
+                @Html.EnumDropDownListFor(model => model.Granularity, new { htmlAttributes = new { @class = "form-control" } })
+              </div>
+            </div>
+            <div class="row form-group">
+              @Html.LabelFor(model => model.ShowDetails, htmlAttributes: new { @class = "control-label col-sm-5" })
+              <div class="input-group date col-sm-5" id="endDatePicker">
+                @Html.EditorFor(model => model.ShowDetails, new { htmlAttributes = new { @class = "form-control" } })
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md-4 col-md-push-4">
+                <input type="submit" value="Update Usage Report" class="btn btn-primary" />
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    @section scripts{
+      <script type="text/javascript">
+        $(function () {
+          $("#startDatePicker").datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true
+          });
+          $("#endDatePicker").datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true
+          });
+        });
+      </script>
+    }
+    <!-- /query filter controls -->
+  </div>
+</div>
+
+<table class="table">
+  <tr>
+    <th>Usage Time (UTC)</th>
+    <th>Meter</th>
+    <th>Quantity Consumed</th>
+    <th>Additional Details</th>
+  </tr>
+
+  @foreach (var item in Model.UsageDetails) {
+    <tr>
+      <td nowrap="nowrap">
+        @item.UsageStartTime.ToString("MMMM dd, yyy HH:mm:ss")
+        <br /> to <br />
+        @item.UsageEndTime.ToString("MMMM dd, yyy HH:mm:ss")
+      </td>
+      <td nowrap="nowrap">
+        <em>
+          @item.MeterCategory
+          @if (!string.IsNullOrEmpty(item.MeterSubCategory)) {
+            <text>|</text> @item.MeterSubCategory
+          }
+          <br />
+        </em>
+        <strong>@item.MeterName</strong>
+      </td>
+      <td>
+        @item.Quantity
+        <br />
+        <em>Measured in @item.Unit</em>
+      </td>
+      <td>
+        <!-- info fields (old format) -->
+        @if (item.InfoFields.MeteredRegion != null) {
+          <table class="table table-striped table-bordered">
+            <tbody>
+              <tr>
+                <td style="font-weight:bold;">Region</td>
+                <td>@item.InfoFields.MeteredRegion</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Service</td>
+                <td>@item.InfoFields.MeteredService</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Service Type</td>
+                <td>@item.InfoFields.MeteredServiceType</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Project</td>
+                <td>@item.InfoFields.Project</td>
+              </tr>
+            </tbody>
+          </table>
+        } else {
+          <!-- instance data (new format) -->
+          <table class="table table-striped table-bordered">
+            <tbody>
+              <tr>
+                <td style="font-weight:bold;">Region</td>
+                <td>@item.InstanceData.MicrosoftResources.Location</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Resource ID</td>
+                <td>@item.InstanceData.MicrosoftResources.ResourceUri</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Order No.</td>
+                <td>@item.InstanceData.MicrosoftResources.OrderNumber</td>
+              </tr>
+              <tr>
+                <td style="font-weight:bold;">Part No.</td>
+                <td>@item.InstanceData.MicrosoftResources.PartNumber</td>
+              </tr>
+            </tbody>
+          </table>
+          if (item.InstanceData.MicrosoftResources.AdditionalInfo.Any()) {
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th colspan="2">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach (var tag in item.InstanceData.MicrosoftResources.AdditionalInfo) {
+                  <tr>
+                    <td style="font-weight:bold;">@tag.Key</td>
+                    <td>@tag.Value</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          if (item.InstanceData.MicrosoftResources.Tags.Any()) {
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th colspan="2">Tags</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach (var tag in item.InstanceData.MicrosoftResources.Tags) {
+                  <tr>
+                    <td style="font-weight:bold;">@tag.Key</td>
+                    <td>@tag.Value</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </td>
+    </tr>
+  }
+
+</table>
